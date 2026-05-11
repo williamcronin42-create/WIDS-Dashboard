@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
+import json
+import calendar
 import matplotlib.pyplot as plt
+import reverse_geocoder as rg
 
 st.set_page_config(layout="wide")
 
@@ -10,72 +13,90 @@ st.title("Wildfire Evacuation Lead Time Dashboard")
 events = pd.read_csv("geo_events_geoevent.csv")
 changes = pd.read_csv("geo_events_geoeventchangelog.csv")
 
-# DATETIME
-events["date_created"] = pd.to_datetime(events["date_created"])
-changes["date_created"] = pd.to_datetime(changes["date_created"])
+# -----------------------------
+# PREPROCESSING
+# -----------------------------
 
-# FILTER WILDFIRES
-wildfires = events[
-    events["geo_event_type"].astype(str).str.contains(
-        "wildfire",
-        case=False,
-        na=False
-    )
-].copy()
+def has_evac_change(change_text):
+    try:
+        change_dict = json.loads(change_text)
+        return any(
+            "evacuation" in key.lower()
+            for key in change_dict.keys()
+        )
+    except:
+        return False
 
-# FILTER EVACUATION CHANGES
 evac_changes = changes[
-    changes["changes"].astype(str).str.contains(
-        "evac",
-        case=False,
-        na=False
-    )
+    changes["changes"].apply(has_evac_change)
 ].copy()
 
-# FIRST EVAC CHANGE
 first_evac = (
     evac_changes
-    .sort_values("date_created")
-    .groupby("geo_event_id")
-    .first()
+    .groupby("geo_event_id")["date_created"]
+    .min()
     .reset_index()
+    .rename(columns={"date_created": "first_evac_time"})
 )
 
-# MERGE
-lead_time_with_evac = wildfires.merge(
-    first_evac[["geo_event_id", "date_created"]],
+lead_time_df = events[
+    [
+        "id",
+        "name",
+        "date_created",
+        "lat",
+        "lng",
+        "notification_type"
+    ]
+].copy()
+
+lead_time_df = lead_time_df.merge(
+    first_evac,
     left_on="id",
     right_on="geo_event_id",
-    suffixes=("_wildfire", "_evac")
+    how="left"
 )
 
-# LEAD TIME
-lead_time_with_evac["lead_time_minutes"] = (
-    lead_time_with_evac["date_created_evac"]
-    - lead_time_with_evac["date_created_wildfire"]
+lead_time_df["date_created"] = pd.to_datetime(
+    lead_time_df["date_created"],
+    errors="coerce",
+    utc=True
+)
+
+lead_time_df["first_evac_time"] = pd.to_datetime(
+    lead_time_df["first_evac_time"],
+    errors="coerce",
+    utc=True
+)
+
+lead_time_df["lead_time_minutes"] = (
+    lead_time_df["first_evac_time"]
+    - lead_time_df["date_created"]
 ).dt.total_seconds() / 60
 
-# REMOVE NEGATIVE VALUES
-lead_time_with_evac = lead_time_with_evac[
-    lead_time_with_evac["lead_time_minutes"] >= 0
-]
+lead_time_with_evac = lead_time_df.dropna(
+    subset=["first_evac_time"]
+).copy()
 
-# TEMP STATE PLACEHOLDER
-lead_time_with_evac["state"] = (
-    lead_time_with_evac["address"]
-    .astype(str)
-    .str[-2:]
-)
-
-# MONTH COLUMN
 lead_time_with_evac["month"] = (
-    lead_time_with_evac["date_created_wildfire"]
-    .dt.month_name()
+    lead_time_with_evac["date_created"].dt.month
 )
 
-month_order = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
+# -----------------------------
+# REVERSE GEOCODING
+# -----------------------------
+
+coords = list(
+    zip(
+        lead_time_with_evac["lat"],
+        lead_time_with_evac["lng"]
+    )
+)
+
+results = rg.search(coords)
+
+lead_time_with_evac["state"] = [
+    r["admin1"] for r in results
 ]
 
 # -----------------------------
@@ -89,9 +110,11 @@ state_summary = (
     .sort_values("median")
 )
 
-filtered_states = state_summary[
-    state_summary["count"] >= 1
+state_summary = state_summary[
+    state_summary["count"] >= 15
 ]
+
+filtered_states = state_summary.sort_values("median")
 
 st.header("Median Evacuation Lead Time by State")
 
@@ -123,22 +146,40 @@ st.pyplot(fig1)
 # GRAPH 2
 # -----------------------------
 
-st.header("Wildfire Frequency by Month")
-
-monthly_counts = (
+fires_per_month = (
     lead_time_with_evac["month"]
     .value_counts()
-    .reindex(month_order)
+    .sort_index()
 )
 
-fig2, ax2 = plt.subplots(figsize=(12,5))
+month_names = [
+    calendar.month_name[m]
+    for m in fires_per_month.index
+]
 
-ax2.bar(monthly_counts.index, monthly_counts.values)
+st.header("Wildfire Frequency by Month")
 
-ax2.set_ylabel("Wildfire Count")
+fig2, ax2 = plt.subplots(figsize=(12,6))
+
+bars = ax2.bar(
+    month_names,
+    fires_per_month.values
+)
+
+ax2.set_xlabel("Month")
+ax2.set_ylabel("Number of Wildfires")
 ax2.set_title("Wildfire Frequency by Month")
 
 plt.xticks(rotation=45)
+
+for bar, value in zip(bars, fires_per_month.values):
+    ax2.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        str(value),
+        ha='center',
+        va='bottom'
+    )
 
 st.pyplot(fig2)
 
@@ -146,22 +187,101 @@ st.pyplot(fig2)
 # GRAPH 3
 # -----------------------------
 
-st.header("Median Evacuation Lead Time by Month")
-
-monthly_median = (
+monthly = (
     lead_time_with_evac
     .groupby("month")["lead_time_minutes"]
     .median()
-    .reindex(month_order)
 )
 
-fig3, ax3 = plt.subplots(figsize=(12,5))
+month_names = [
+    calendar.month_name[m]
+    for m in monthly.index
+]
 
-ax3.bar(monthly_median.index, monthly_median.values)
+st.header("Median Evacuation Lead Time by Month")
 
+fig3, ax3 = plt.subplots(figsize=(12,6))
+
+bars = ax3.bar(
+    month_names,
+    monthly.values
+)
+
+ax3.set_xlabel("Month")
 ax3.set_ylabel("Median Lead Time (minutes)")
 ax3.set_title("Median Evacuation Lead Time by Month")
 
 plt.xticks(rotation=45)
 
+for bar, value in zip(bars, monthly.values):
+    ax3.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        f"{value:.1f}",
+        ha='center',
+        va='bottom'
+    )
+
 st.pyplot(fig3)
+
+# -----------------------------
+# GRAPH 4
+# -----------------------------
+
+rural_data = {
+    "Oklahoma": 35.8,
+    "Colorado": 14.4,
+    "Nevada": 6.2,
+    "California": 5.8,
+    "Washington": 16.6,
+    "Utah": 10.8,
+    "Oregon": 19.7,
+    "Arizona": 11.5,
+    "Wyoming": 37.4,
+    "Montana": 47.1,
+    "New Mexico": 24.7,
+    "Idaho": 30.8
+}
+
+state_rural_summary = state_summary.copy()
+
+state_rural_summary["rural_pct"] = (
+    state_rural_summary.index.map(rural_data)
+)
+
+state_rural_summary = state_rural_summary.sort_values("median")
+
+st.header(
+    "Median Evacuation Lead Time by State with Rural Population Percentage"
+)
+
+fig4, ax4 = plt.subplots(figsize=(14,6))
+
+bars = ax4.bar(
+    state_rural_summary.index,
+    state_rural_summary["median"]
+)
+
+ax4.set_xlabel("State")
+ax4.set_ylabel("Median Lead Time (minutes)")
+
+ax4.set_title(
+    "Median Evacuation Lead Time by State with Rural Population Percentage"
+)
+
+plt.xticks(rotation=45)
+
+for bar, rural_pct in zip(
+    bars,
+    state_rural_summary["rural_pct"]
+):
+    ax4.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        f"{rural_pct:.1f}% rural",
+        ha="center",
+        va="bottom",
+        fontsize=9
+    )
+
+st.pyplot(fig4)
