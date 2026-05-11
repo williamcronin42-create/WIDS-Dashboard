@@ -70,9 +70,24 @@ st.header("Wildfire Frequency by Month")
 
 fig2, ax2 = plt.subplots(figsize=(12,6))
 
-ax2.bar(month_names, fires_per_month.values)
+bars = ax2.bar(
+    month_names,
+    fires_per_month.values
+)
+
+ax2.set_xlabel("Month")
+ax2.set_ylabel("Number of Wildfires")
 
 plt.xticks(rotation=45)
+
+for bar, value in zip(bars, fires_per_month.values):
+    ax2.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        str(value),
+        ha='center',
+        va='bottom'
+    )
 
 st.pyplot(fig2)
 
@@ -94,9 +109,24 @@ st.header("Median Evacuation Lead Time by Month")
 
 fig3, ax3 = plt.subplots(figsize=(12,6))
 
-ax3.bar(month_names, monthly.values)
+bars = ax3.bar(
+    month_names,
+    monthly.values
+)
+
+ax3.set_xlabel("Month")
+ax3.set_ylabel("Median Lead Time (minutes)")
 
 plt.xticks(rotation=45)
+
+for bar, value in zip(bars, monthly.values):
+    ax3.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        f"{value:.1f}",
+        ha='center',
+        va='bottom'
+    )
 
 st.pyplot(fig3)
 
@@ -137,6 +167,9 @@ bars = ax4.bar(
     state_rural_summary.index,
     state_rural_summary["median"]
 )
+
+ax4.set_xlabel("State")
+ax4.set_ylabel("Median Lead Time (minutes)")
 
 plt.xticks(rotation=45)
 
