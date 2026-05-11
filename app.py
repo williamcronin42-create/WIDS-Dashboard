@@ -1,109 +1,21 @@
 import streamlit as st
 import pandas as pd
-import json
-import calendar
 import matplotlib.pyplot as plt
-from geopy.geocoders import Nominatim
+import calendar
 
 st.set_page_config(layout="wide")
 
 st.title("Wildfire Evacuation Lead Time Dashboard")
 
-events = pd.read_csv("geo_events_geoevent.csv")
-changes = pd.read_csv("geo_events_geoeventchangelog.csv")
+# LOAD PROCESSED DATA
+df = pd.read_csv("processed_wildfire_data.csv")
 
-def has_evac_change(change_text):
-    try:
-        change_dict = json.loads(change_text)
-        return any(
-            "evacuation" in key.lower()
-            for key in change_dict.keys()
-        )
-    except:
-        return False
-
-evac_changes = changes[
-    changes["changes"].apply(has_evac_change)
-].copy()
-
-first_evac = (
-    evac_changes
-    .groupby("geo_event_id")["date_created"]
-    .min()
-    .reset_index()
-    .rename(columns={"date_created": "first_evac_time"})
-)
-
-lead_time_df = events[
-    [
-        "id",
-        "name",
-        "date_created",
-        "lat",
-        "lng",
-        "notification_type"
-    ]
-].copy()
-
-lead_time_df = lead_time_df.merge(
-    first_evac,
-    left_on="id",
-    right_on="geo_event_id",
-    how="left"
-)
-
-lead_time_df["date_created"] = pd.to_datetime(
-    lead_time_df["date_created"],
-    errors="coerce",
-    utc=True
-)
-
-lead_time_df["first_evac_time"] = pd.to_datetime(
-    lead_time_df["first_evac_time"],
-    errors="coerce",
-    utc=True
-)
-
-lead_time_df["lead_time_minutes"] = (
-    lead_time_df["first_evac_time"]
-    - lead_time_df["date_created"]
-).dt.total_seconds() / 60
-
-lead_time_with_evac = lead_time_df.dropna(
-    subset=["first_evac_time"]
-).copy()
-
-lead_time_with_evac["month"] = (
-    lead_time_with_evac["date_created"].dt.month
-)
-
-# REAL STATE LOOKUP
-geolocator = Nominatim(user_agent="wildfire_dashboard")
-
-def get_state(lat, lng):
-    try:
-        location = geolocator.reverse(
-            f"{lat}, {lng}",
-            language="en"
-        )
-        if location and "state" in location.raw["address"]:
-            return location.raw["address"]["state"]
-    except:
-        return None
-
-lead_time_with_evac["state"] = lead_time_with_evac.apply(
-    lambda row: get_state(row["lat"], row["lng"]),
-    axis=1
-)
-
-lead_time_with_evac = lead_time_with_evac.dropna(
-    subset=["state"]
-)
-
+# -----------------------------
 # GRAPH 1
+# -----------------------------
+
 state_summary = (
-    lead_time_with_evac
-    .groupby("state")["lead_time_minutes"]
+    df.groupby("state")["lead_time_minutes"]
     .agg(["count", "median"])
     .sort_values("median")
 )
@@ -123,6 +35,9 @@ bars = ax1.bar(
     filtered_states["median"]
 )
 
+ax1.set_xlabel("State")
+ax1.set_ylabel("Median Lead Time (minutes)")
+
 plt.xticks(rotation=45)
 
 for bar, value in zip(bars, filtered_states["median"]):
@@ -136,9 +51,12 @@ for bar, value in zip(bars, filtered_states["median"]):
 
 st.pyplot(fig1)
 
+# -----------------------------
 # GRAPH 2
+# -----------------------------
+
 fires_per_month = (
-    lead_time_with_evac["month"]
+    df["month"]
     .value_counts()
     .sort_index()
 )
@@ -158,10 +76,12 @@ plt.xticks(rotation=45)
 
 st.pyplot(fig2)
 
+# -----------------------------
 # GRAPH 3
+# -----------------------------
+
 monthly = (
-    lead_time_with_evac
-    .groupby("month")["lead_time_minutes"]
+    df.groupby("month")["lead_time_minutes"]
     .median()
 )
 
@@ -179,3 +99,58 @@ ax3.bar(month_names, monthly.values)
 plt.xticks(rotation=45)
 
 st.pyplot(fig3)
+
+# -----------------------------
+# GRAPH 4
+# -----------------------------
+
+rural_data = {
+    "Oklahoma": 35.8,
+    "Colorado": 14.4,
+    "Nevada": 6.2,
+    "California": 5.8,
+    "Washington": 16.6,
+    "Utah": 10.8,
+    "Oregon": 19.7,
+    "Arizona": 11.5,
+    "Wyoming": 37.4,
+    "Montana": 47.1,
+    "New Mexico": 24.7,
+    "Idaho": 30.8
+}
+
+state_rural_summary = state_summary.copy()
+
+state_rural_summary["rural_pct"] = (
+    state_rural_summary.index.map(rural_data)
+)
+
+state_rural_summary = state_rural_summary.dropna()
+
+st.header(
+    "Median Evacuation Lead Time by State with Rural Population Percentage"
+)
+
+fig4, ax4 = plt.subplots(figsize=(14,6))
+
+bars = ax4.bar(
+    state_rural_summary.index,
+    state_rural_summary["median"]
+)
+
+plt.xticks(rotation=45)
+
+for bar, rural_pct in zip(
+    bars,
+    state_rural_summary["rural_pct"]
+):
+    ax4.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        f"{rural_pct:.1f}% rural",
+        ha="center",
+        va="bottom",
+        fontsize=9
+    )
+
+st.pyplot(fig4)
