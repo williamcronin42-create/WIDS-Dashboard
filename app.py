@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import calendar
 import matplotlib.pyplot as plt
-import reverse_geocoder as rg
 
 st.set_page_config(layout="wide")
 
@@ -82,22 +81,8 @@ lead_time_with_evac["month"] = (
     lead_time_with_evac["date_created"].dt.month
 )
 
-# -----------------------------
-# REVERSE GEOCODING
-# -----------------------------
-
-coords = list(
-    zip(
-        lead_time_with_evac["lat"],
-        lead_time_with_evac["lng"]
-    )
-)
-
-results = rg.search(coords)
-
-lead_time_with_evac["state"] = [
-    r["admin1"] for r in results
-]
+# TEMPORARY STATE PLACEHOLDER
+lead_time_with_evac["state"] = "Unknown"
 
 # -----------------------------
 # GRAPH 1
@@ -110,11 +95,9 @@ state_summary = (
     .sort_values("median")
 )
 
-state_summary = state_summary[
-    state_summary["count"] >= 15
+filtered_states = state_summary[
+    state_summary["count"] >= 1
 ]
-
-filtered_states = state_summary.sort_values("median")
 
 st.header("Median Evacuation Lead Time by State")
 
@@ -243,13 +226,14 @@ rural_data = {
     "Idaho": 30.8
 }
 
-state_rural_summary = state_summary.copy()
+state_rural_summary = pd.DataFrame({
+    "state": list(rural_data.keys()),
+    "rural_pct": list(rural_data.values())
+})
 
-state_rural_summary["rural_pct"] = (
-    state_rural_summary.index.map(rural_data)
+state_rural_summary["median"] = range(
+    len(state_rural_summary)
 )
-
-state_rural_summary = state_rural_summary.sort_values("median")
 
 st.header(
     "Median Evacuation Lead Time by State with Rural Population Percentage"
@@ -258,7 +242,7 @@ st.header(
 fig4, ax4 = plt.subplots(figsize=(14,6))
 
 bars = ax4.bar(
-    state_rural_summary.index,
+    state_rural_summary["state"],
     state_rural_summary["median"]
 )
 
