@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import calendar
 
 st.set_page_config(layout="wide")
@@ -39,9 +40,11 @@ st.header("Wildfire Frequency by Month")
 
 fig1, ax1 = plt.subplots(figsize=(9,4))
 
-bars = ax1.bar(
-    month_names,
-    fires_per_month.values
+bars = sns.barplot(
+    x=month_names,
+    y=fires_per_month.values,
+    palette="crest",
+    ax=ax1
 )
 
 ax1.set_xlabel("Month")
@@ -49,10 +52,10 @@ ax1.set_ylabel("Number of Wildfires")
 
 plt.xticks(rotation=45)
 
-for bar, value in zip(bars, fires_per_month.values):
+for i, value in enumerate(fires_per_month.values):
     ax1.text(
-        bar.get_x() + bar.get_width()/2,
-        bar.get_height(),
+        i,
+        value,
         str(value),
         ha='center',
         va='bottom'
@@ -102,9 +105,11 @@ if view_option == "State":
 
     fig2, ax2 = plt.subplots(figsize=(10,4))
 
-    bars = ax2.bar(
-        filtered_states.index,
-        filtered_states["median"]
+    bars = sns.barplot(
+        x=filtered_states.index,
+        y=filtered_states["median"],
+        palette="crest",
+        ax=ax2
     )
 
     ax2.set_xlabel("State")
@@ -112,10 +117,10 @@ if view_option == "State":
 
     plt.xticks(rotation=45)
 
-    for bar, value in zip(bars, filtered_states["median"]):
+    for i, value in enumerate(filtered_states["median"]):
         ax2.text(
-            bar.get_x() + bar.get_width()/2,
-            bar.get_height(),
+            i,
+            value,
             f"{value:.1f}",
             ha='center',
             va='bottom'
@@ -150,9 +155,11 @@ elif view_option == "Month":
 
     fig3, ax3 = plt.subplots(figsize=(9,4))
 
-    bars = ax3.bar(
-        month_names,
-        monthly.values
+    bars = sns.barplot(
+        x=month_names,
+        y=monthly.values,
+        palette="crest",
+        ax=ax3
     )
 
     ax3.set_xlabel("Month")
@@ -160,10 +167,10 @@ elif view_option == "Month":
 
     plt.xticks(rotation=45)
 
-    for bar, value in zip(bars, monthly.values):
+    for i, value in enumerate(monthly.values):
         ax3.text(
-            bar.get_x() + bar.get_width()/2,
-            bar.get_height(),
+            i,
+            value,
             f"{value:.1f}",
             ha='center',
             va='bottom'
@@ -213,9 +220,11 @@ elif view_option == "State with Rural Population Percentage":
 
     fig4, ax4 = plt.subplots(figsize=(10,4))
 
-    bars = ax4.bar(
-        state_rural_summary.index,
-        state_rural_summary["median"]
+    bars = sns.barplot(
+        x=state_rural_summary.index,
+        y=state_rural_summary["median"],
+        palette="crest",
+        ax=ax4
     )
 
     ax4.set_xlabel("State")
@@ -223,13 +232,12 @@ elif view_option == "State with Rural Population Percentage":
 
     plt.xticks(rotation=45)
 
-    for bar, rural_pct in zip(
-        bars,
+    for i, rural_pct in enumerate(
         state_rural_summary["rural_pct"]
     ):
         ax4.text(
-            bar.get_x() + bar.get_width()/2,
-            bar.get_height(),
+            i,
+            state_rural_summary["median"].iloc[i],
             f"{rural_pct:.1f}% rural",
             ha="center",
             va="bottom",
