@@ -202,28 +202,21 @@ elif view_option == "Month":
 
 elif view_option == "State with Rural Population Percentage":
 
-    rural_data = {
-        "Oklahoma": 35.8,
-        "Colorado": 14.4,
-        "Nevada": 6.2,
-        "California": 5.8,
-        "Washington": 16.6,
-        "Utah": 10.8,
-        "Oregon": 19.7,
-        "Arizona": 11.5,
-        "Wyoming": 37.4,
-        "Montana": 47.1,
-        "New Mexico": 24.7,
-        "Idaho": 30.8
-    }
+    factor_data = pd.DataFrame({
+        "state": [
+            "Oklahoma", "Colorado", "Nevada", "California", "Washington", "Utah",
+            "Oregon", "Arizona", "Wyoming", "Montana", "New Mexico", "Idaho"
+        ],
+        "rural_pct": [
+            35.8, 14.4, 6.2, 5.8, 16.6, 10.8,
+            19.7, 11.5, 37.4, 47.1, 24.7, 30.8
+        ]
+    })
 
-    state_rural_summary = state_summary.copy()
-
-    state_rural_summary["rural_pct"] = (
-        state_rural_summary.index.map(rural_data)
+    state_rural_summary = (
+        filtered_states
+        .merge(factor_data, left_index=True, right_on="state")
     )
-
-    state_rural_summary = state_rural_summary.dropna()
 
     st.header(
         "Median Evacuation Lead Time by State with Rural Population Percentage"
@@ -232,7 +225,7 @@ elif view_option == "State with Rural Population Percentage":
     fig4, ax4 = plt.subplots(figsize=(10,4))
 
     sns.barplot(
-        x=state_rural_summary.index,
+        x=state_rural_summary["state"],
         y=state_rural_summary["median"],
         palette="crest",
         ax=ax4
@@ -421,48 +414,28 @@ st.pyplot(fig5)
 
 # Environmental data
 
-rural_data = {
-    "Oklahoma": 35.8,
-    "Colorado": 14.4,
-    "Nevada": 6.2,
-    "California": 5.8,
-    "Washington": 16.6,
-    "Utah": 10.8,
-    "Oregon": 19.7,
-    "Arizona": 11.5,
-    "Wyoming": 37.4,
-    "Montana": 47.1,
-    "New Mexico": 24.7,
-    "Idaho": 30.8
-}
+factor_data = pd.DataFrame({
+    "state": [
+        "Oklahoma", "Colorado", "Nevada", "California", "Washington", "Utah",
+        "Oregon", "Arizona", "Wyoming", "Montana", "New Mexico", "Idaho"
+    ],
+    "rural_pct": [
+        35.8, 14.4, 6.2, 5.8, 16.6, 10.8,
+        19.7, 11.5, 37.4, 47.1, 24.7, 30.8
+    ],
+    "precipitation": [
+        36.5, 15.9, 9.5, 22.2, 38.4, 12.2,
+        27.4, 13.6, 12.9, 15.3, 14.6, 18.9
+    ],
+    "wind_speed": [
+        16.46, 20.16, 17.43, 13.54, 15.03, 18.26,
+        16.38, 15.92, 20.88, 21.03, 17.82, 20.59
+    ]
+})
 
-precipitation_data = {
-    "California": 22.2,
-    "Colorado": 15.9,
-    "Idaho": 18.9,
-    "Montana": 15.3,
-    "Nevada": 9.5,
-    "Oklahoma": 36.5,
-    "Oregon": 27.4,
-    "Washington": 38.4,
-    "Wyoming": 12.9,
-    "Arizona": 13.6,
-    "New Mexico": 14.6
-}
-
-wind_data = {
-    "California": 7.2,
-    "Colorado": 9.3,
-    "Idaho": 7.8,
-    "Montana": 10.1,
-    "Nevada": 8.4,
-    "Oklahoma": 12.0,
-    "Oregon": 6.5,
-    "Washington": 6.7,
-    "Wyoming": 12.9,
-    "Arizona": 7.5,
-    "New Mexico": 9.8
-}
+selected_factor = factor_data[
+    factor_data["state"] == selected_state
+]
 
 # Environmental factors
 
@@ -472,15 +445,15 @@ env1, env2, env3 = st.columns(3)
 
 env1.metric(
     "Rural Population %",
-    rural_data.get(selected_state, "N/A")
+    f"{selected_factor['rural_pct'].iloc[0]:.1f}%"
 )
 
 env2.metric(
     "Avg Annual Precipitation",
-    precipitation_data.get(selected_state, "N/A")
+    f"{selected_factor['precipitation'].iloc[0]:.1f} in"
 )
 
 env3.metric(
     "Average Wind Speed",
-    wind_data.get(selected_state, "N/A")
+    f"{selected_factor['wind_speed'].iloc[0]:.2f} mph"
 )
