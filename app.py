@@ -273,7 +273,7 @@ st.markdown(
 st.markdown(
     """
     <br><br>
-    ### [Next Page → Interactive Analysis](./Interactive_Analysis)
+    ### [Next Page → Interactive Analysis](pages/Interactive_Analysis.py)
     """,
     unsafe_allow_html=True
 )
