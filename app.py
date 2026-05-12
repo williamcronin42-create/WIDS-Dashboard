@@ -40,7 +40,7 @@ st.header("Wildfire Frequency by Month")
 
 fig1, ax1 = plt.subplots(figsize=(9,4))
 
-bars = sns.barplot(
+sns.barplot(
     x=month_names,
     y=fires_per_month.values,
     palette="crest",
@@ -105,7 +105,7 @@ if view_option == "State":
 
     fig2, ax2 = plt.subplots(figsize=(10,4))
 
-    bars = sns.barplot(
+    sns.barplot(
         x=filtered_states.index,
         y=filtered_states["median"],
         palette="crest",
@@ -155,7 +155,7 @@ elif view_option == "Month":
 
     fig3, ax3 = plt.subplots(figsize=(9,4))
 
-    bars = sns.barplot(
+    sns.barplot(
         x=month_names,
         y=monthly.values,
         palette="crest",
@@ -220,7 +220,7 @@ elif view_option == "State with Rural Population Percentage":
 
     fig4, ax4 = plt.subplots(figsize=(10,4))
 
-    bars = sns.barplot(
+    sns.barplot(
         x=state_rural_summary.index,
         y=state_rural_summary["median"],
         palette="crest",
@@ -268,12 +268,163 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Navigation
+# Divider
+
+st.markdown("---")
+
+# Interactive analysis section
+
+st.title("Interactive Analysis")
 
 st.markdown(
     """
-    <br><br>
-    ### [Next Page → Interactive Analysis](pages/Interactive_Analysis.py)
+    <p style='font-size:20px;'>
+    Explore wildfire evacuation lead time trends interactively by state and season.
+    </p>
     """,
     unsafe_allow_html=True
+)
+
+# KPI calculations
+
+interactive_summary = (
+    df.groupby("state")["lead_time_minutes"]
+    .agg(["count", "median"])
+)
+
+median_lead_time = df["lead_time_minutes"].median()
+
+total_wildfires = len(df)
+
+fastest_state = interactive_summary["median"].idxmin()
+
+slowest_state = interactive_summary["median"].idxmax()
+
+peak_month = (
+    df["month"]
+    .value_counts()
+    .idxmax()
+)
+
+worst_month = (
+    df.groupby("month")["lead_time_minutes"]
+    .median()
+    .idxmax()
+)
+
+# KPI cards
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric(
+    "Median Lead Time",
+    f"{median_lead_time:.1f} min"
+)
+
+col2.metric(
+    "Total Wildfires",
+    total_wildfires
+)
+
+col3.metric(
+    "Fastest State",
+    fastest_state
+)
+
+col4, col5, col6 = st.columns(3)
+
+col4.metric(
+    "Slowest State",
+    slowest_state
+)
+
+col5.metric(
+    "Peak Month",
+    calendar.month_name[peak_month]
+)
+
+col6.metric(
+    "Worst Lead-Time Month",
+    calendar.month_name[worst_month]
+)
+
+# State selector
+
+states = sorted(df["state"].dropna().unique())
+
+selected_state = st.selectbox(
+    "Select a State",
+    states,
+    key="interactive_state"
+)
+
+state_df = df[
+    df["state"] == selected_state
+]
+
+# State overview
+
+st.header(f"{selected_state} Overview")
+
+state_col1, state_col2 = st.columns(2)
+
+state_col1.metric(
+    "Median Lead Time",
+    f"{state_df['lead_time_minutes'].median():.1f} min"
+)
+
+state_col2.metric(
+    "Incident Count",
+    len(state_df)
+)
+
+# Monthly trend graph
+
+monthly = (
+    state_df.groupby("month")["lead_time_minutes"]
+    .median()
+)
+
+month_names = [
+    calendar.month_name[m]
+    for m in monthly.index
+]
+
+st.header("Monthly Lead Time Trend")
+
+fig5, ax5 = plt.subplots(figsize=(9,4))
+
+sns.lineplot(
+    x=month_names,
+    y=monthly.values,
+    marker="o",
+    ax=ax5
+)
+
+ax5.set_xlabel("Month")
+ax5.set_ylabel("Median Lead Time (minutes)")
+
+plt.xticks(rotation=45)
+
+st.pyplot(fig5)
+
+# Environmental factors
+
+st.header("Environmental Factors")
+
+env1, env2, env3 = st.columns(3)
+
+env1.metric(
+    "Rural Population %",
+    rural_data.get(selected_state, "N/A")
+)
+
+env2.metric(
+    "Avg Annual Precipitation",
+    precipitation_data.get(selected_state, "N/A")
+)
+
+env3.metric(
+    "Average Wind Speed",
+    wind_data.get(selected_state, "N/A")
 )
