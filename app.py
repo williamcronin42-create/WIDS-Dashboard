@@ -23,6 +23,21 @@ st.markdown(
 
 df = pd.read_csv("processed_wildfire_data.csv")
 
+# Filter states with at least 15 wildfires
+
+valid_states = (
+    df["state"]
+    .value_counts()
+)
+
+valid_states = valid_states[
+    valid_states >= 15
+].index
+
+df = df[
+    df["state"].isin(valid_states)
+]
+
 # Wildfire frequency graph
 
 fires_per_month = (
@@ -90,10 +105,6 @@ state_summary = (
     .agg(["count", "median"])
     .sort_values("median")
 )
-
-state_summary = state_summary[
-    state_summary["count"] >= 15
-]
 
 filtered_states = state_summary.sort_values("median")
 
