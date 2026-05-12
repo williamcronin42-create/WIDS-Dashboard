@@ -204,7 +204,13 @@ env3.metric(
     "Average Wind Speed",
     wind_data.get(selected_state, "N/A")
 )
-st.page_link(
-    "app.py",
-    label="← Back to Main Dashboard"
+
+# Navigation
+
+st.markdown(
+    """
+    <br><br>
+    ### [← Back to Main Dashboard](../)
+    """,
+    unsafe_allow_html=True
 )
