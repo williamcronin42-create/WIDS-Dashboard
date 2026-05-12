@@ -37,7 +37,7 @@ month_names = [
 
 st.header("Wildfire Frequency by Month")
 
-fig1, ax1 = plt.subplots(figsize=(12,6))
+fig1, ax1 = plt.subplots(figsize=(9,4))
 
 bars = ax1.bar(
     month_names,
@@ -100,7 +100,7 @@ if view_option == "State":
 
     st.header("Median Evacuation Lead Time by State")
 
-    fig2, ax2 = plt.subplots(figsize=(14,6))
+    fig2, ax2 = plt.subplots(figsize=(10,4))
 
     bars = ax2.bar(
         filtered_states.index,
@@ -148,7 +148,7 @@ elif view_option == "Month":
 
     st.header("Median Evacuation Lead Time by Month")
 
-    fig3, ax3 = plt.subplots(figsize=(12,6))
+    fig3, ax3 = plt.subplots(figsize=(9,4))
 
     bars = ax3.bar(
         month_names,
@@ -211,7 +211,7 @@ elif view_option == "State with Rural Population Percentage":
         "Median Evacuation Lead Time by State with Rural Population Percentage"
     )
 
-    fig4, ax4 = plt.subplots(figsize=(14,6))
+    fig4, ax4 = plt.subplots(figsize=(10,4))
 
     bars = ax4.bar(
         state_rural_summary.index,
@@ -233,7 +233,7 @@ elif view_option == "State with Rural Population Percentage":
             f"{rural_pct:.1f}% rural",
             ha="center",
             va="bottom",
-            fontsize=9
+            fontsize=8
         )
 
     st.pyplot(fig4)
