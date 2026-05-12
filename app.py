@@ -5,14 +5,61 @@ import calendar
 
 st.set_page_config(layout="wide")
 
-st.title("Wildfire Evacuation Lead Time Dashboard")
+# Title and introduction
 
-# LOAD DATA
+st.title("Geographic and Seasonal Variation in Wildfire Evacuation Lead Times")
+
+st.markdown("""
+This dashboard analyzes WatchDuty wildfire incident data to explore geographic and seasonal variation in evacuation response timing across the United States. Lead time was calculated as the time difference between wildfire creation and the first evacuation-related update.
+""")
+
+# Load processed data
+
 df = pd.read_csv("processed_wildfire_data.csv")
 
-# -----------------------------
-# DROPDOWN
-# -----------------------------
+# Wildfire frequency graph
+
+fires_per_month = (
+    df["month"]
+    .value_counts()
+    .sort_index()
+)
+
+month_names = [
+    calendar.month_name[m]
+    for m in fires_per_month.index
+]
+
+st.header("Wildfire Frequency by Month")
+
+fig1, ax1 = plt.subplots(figsize=(12,6))
+
+bars = ax1.bar(
+    month_names,
+    fires_per_month.values
+)
+
+ax1.set_xlabel("Month")
+ax1.set_ylabel("Number of Wildfires")
+
+plt.xticks(rotation=45)
+
+for bar, value in zip(bars, fires_per_month.values):
+    ax1.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        str(value),
+        ha='center',
+        va='bottom'
+    )
+
+st.pyplot(fig1)
+
+st.markdown("""
+Wildfire frequency peaked during the summer months, particularly June through August. However, wildfire frequency alone did not fully explain evacuation response timing patterns observed later in the analysis.
+""")
+
+# Dropdown selector
 
 view_option = st.selectbox(
     "Median Evacuation Lead Time By:",
@@ -23,9 +70,7 @@ view_option = st.selectbox(
     )
 )
 
-# -----------------------------
-# STATE SUMMARY
-# -----------------------------
+# State summary calculations
 
 state_summary = (
     df.groupby("state")["lead_time_minutes"]
@@ -39,28 +84,26 @@ state_summary = state_summary[
 
 filtered_states = state_summary.sort_values("median")
 
-# -----------------------------
-# GRAPH OPTION 1
-# -----------------------------
+# State graph
 
 if view_option == "State":
 
     st.header("Median Evacuation Lead Time by State")
 
-    fig1, ax1 = plt.subplots(figsize=(14,6))
+    fig2, ax2 = plt.subplots(figsize=(14,6))
 
-    bars = ax1.bar(
+    bars = ax2.bar(
         filtered_states.index,
         filtered_states["median"]
     )
 
-    ax1.set_xlabel("State")
-    ax1.set_ylabel("Median Lead Time (minutes)")
+    ax2.set_xlabel("State")
+    ax2.set_ylabel("Median Lead Time (minutes)")
 
     plt.xticks(rotation=45)
 
     for bar, value in zip(bars, filtered_states["median"]):
-        ax1.text(
+        ax2.text(
             bar.get_x() + bar.get_width()/2,
             bar.get_height(),
             f"{value:.1f}",
@@ -68,11 +111,13 @@ if view_option == "State":
             va='bottom'
         )
 
-    st.pyplot(fig1)
+    st.pyplot(fig2)
 
-# -----------------------------
-# GRAPH OPTION 2
-# -----------------------------
+    st.markdown("""
+California demonstrated relatively fast evacuation update timing despite having the largest wildfire volume in the dataset. This suggests that operational maturity and wildfire preparedness infrastructure may significantly improve evacuation responsiveness.
+""")
+
+# Month graph
 
 elif view_option == "Month":
 
@@ -88,20 +133,20 @@ elif view_option == "Month":
 
     st.header("Median Evacuation Lead Time by Month")
 
-    fig2, ax2 = plt.subplots(figsize=(12,6))
+    fig3, ax3 = plt.subplots(figsize=(12,6))
 
-    bars = ax2.bar(
+    bars = ax3.bar(
         month_names,
         monthly.values
     )
 
-    ax2.set_xlabel("Month")
-    ax2.set_ylabel("Median Lead Time (minutes)")
+    ax3.set_xlabel("Month")
+    ax3.set_ylabel("Median Lead Time (minutes)")
 
     plt.xticks(rotation=45)
 
     for bar, value in zip(bars, monthly.values):
-        ax2.text(
+        ax3.text(
             bar.get_x() + bar.get_width()/2,
             bar.get_height(),
             f"{value:.1f}",
@@ -109,11 +154,13 @@ elif view_option == "Month":
             va='bottom'
         )
 
-    st.pyplot(fig2)
+    st.pyplot(fig3)
 
-# -----------------------------
-# GRAPH OPTION 3
-# -----------------------------
+    st.markdown("""
+September exhibited the highest median evacuation lead times despite not having the highest wildfire frequency. This suggests operational and environmental factors beyond wildfire volume may contribute to delayed evacuation responses.
+""")
+
+# Rural population graph
 
 elif view_option == "State with Rural Population Percentage":
 
@@ -144,15 +191,15 @@ elif view_option == "State with Rural Population Percentage":
         "Median Evacuation Lead Time by State with Rural Population Percentage"
     )
 
-    fig3, ax3 = plt.subplots(figsize=(14,6))
+    fig4, ax4 = plt.subplots(figsize=(14,6))
 
-    bars = ax3.bar(
+    bars = ax4.bar(
         state_rural_summary.index,
         state_rural_summary["median"]
     )
 
-    ax3.set_xlabel("State")
-    ax3.set_ylabel("Median Lead Time (minutes)")
+    ax4.set_xlabel("State")
+    ax4.set_ylabel("Median Lead Time (minutes)")
 
     plt.xticks(rotation=45)
 
@@ -160,7 +207,7 @@ elif view_option == "State with Rural Population Percentage":
         bars,
         state_rural_summary["rural_pct"]
     ):
-        ax3.text(
+        ax4.text(
             bar.get_x() + bar.get_width()/2,
             bar.get_height(),
             f"{rural_pct:.1f}% rural",
@@ -169,44 +216,8 @@ elif view_option == "State with Rural Population Percentage":
             fontsize=9
         )
 
-    st.pyplot(fig3)
+    st.pyplot(fig4)
 
-# -----------------------------
-# STANDALONE GRAPH
-# -----------------------------
-
-fires_per_month = (
-    df["month"]
-    .value_counts()
-    .sort_index()
-)
-
-month_names = [
-    calendar.month_name[m]
-    for m in fires_per_month.index
-]
-
-st.header("Wildfire Frequency by Month")
-
-fig4, ax4 = plt.subplots(figsize=(12,6))
-
-bars = ax4.bar(
-    month_names,
-    fires_per_month.values
-)
-
-ax4.set_xlabel("Month")
-ax4.set_ylabel("Number of Wildfires")
-
-plt.xticks(rotation=45)
-
-for bar, value in zip(bars, fires_per_month.values):
-    ax4.text(
-        bar.get_x() + bar.get_width()/2,
-        bar.get_height(),
-        str(value),
-        ha='center',
-        va='bottom'
-    )
-
-st.pyplot(fig4)
+    st.markdown("""
+States with larger rural populations generally exhibited longer evacuation lead times. However, the relationship was not perfectly linear, suggesting that operational preparedness and infrastructure can partially mitigate rural response challenges.
+""")
