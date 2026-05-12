@@ -445,7 +445,9 @@ precipitation_data = {
     "Oklahoma": 36.5,
     "Oregon": 27.4,
     "Washington": 38.4,
-    "Wyoming": 12.9
+    "Wyoming": 12.9,
+    "Arizona": 13.6,
+    "New Mexico": 14.6
 }
 
 wind_data = {
@@ -457,7 +459,9 @@ wind_data = {
     "Oklahoma": 12.0,
     "Oregon": 6.5,
     "Washington": 6.7,
-    "Wyoming": 12.9
+    "Wyoming": 12.9,
+    "Arizona": 7.5,
+    "New Mexico": 9.8
 }
 
 # Environmental factors
