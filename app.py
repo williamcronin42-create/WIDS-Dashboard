@@ -408,6 +408,47 @@ plt.xticks(rotation=45)
 
 st.pyplot(fig5)
 
+# Environmental data
+
+rural_data = {
+    "Oklahoma": 35.8,
+    "Colorado": 14.4,
+    "Nevada": 6.2,
+    "California": 5.8,
+    "Washington": 16.6,
+    "Utah": 10.8,
+    "Oregon": 19.7,
+    "Arizona": 11.5,
+    "Wyoming": 37.4,
+    "Montana": 47.1,
+    "New Mexico": 24.7,
+    "Idaho": 30.8
+}
+
+precipitation_data = {
+    "California": 22.2,
+    "Colorado": 15.9,
+    "Idaho": 18.9,
+    "Montana": 15.3,
+    "Nevada": 9.5,
+    "Oklahoma": 36.5,
+    "Oregon": 27.4,
+    "Washington": 38.4,
+    "Wyoming": 12.9
+}
+
+wind_data = {
+    "California": 7.2,
+    "Colorado": 9.3,
+    "Idaho": 7.8,
+    "Montana": 10.1,
+    "Nevada": 8.4,
+    "Oklahoma": 12.0,
+    "Oregon": 6.5,
+    "Washington": 6.7,
+    "Wyoming": 12.9
+}
+
 # Environmental factors
 
 st.header("Environmental Factors")
