@@ -267,7 +267,13 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-st.page_link(
-    "pages/Interactive_Analysis.py",
-    label="Next Page → Interactive Analysis"
+
+# Navigation
+
+st.markdown(
+    """
+    <br><br>
+    ### [Next Page → Interactive Analysis](./Interactive_Analysis)
+    """,
+    unsafe_allow_html=True
 )
