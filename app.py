@@ -132,21 +132,12 @@ if view_option == "State":
         ax2.text(
             i,
             value,
-            f"{value:.1f}",
+            f"{value:.2f}",
             ha='center',
             va='bottom'
         )
 
     st.pyplot(fig2)
-
-    st.markdown(
-        """
-        <p style='font-size:20px;'>
-        California demonstrated relatively fast evacuation update timing despite having the largest wildfire volume in the dataset. This suggests that operational maturity and wildfire preparedness infrastructure may significantly improve evacuation responsiveness.
-        </p>
-        """,
-        unsafe_allow_html=True
-    )
 
 # Month graph
 
@@ -182,21 +173,12 @@ elif view_option == "Month":
         ax3.text(
             i,
             value,
-            f"{value:.1f}",
+            f"{value:.2f}",
             ha='center',
             va='bottom'
         )
 
     st.pyplot(fig3)
-
-    st.markdown(
-        """
-        <p style='font-size:20px;'>
-        September exhibited the highest median evacuation lead times despite not having the highest wildfire frequency. This suggests operational and environmental factors beyond wildfire volume may contribute to delayed evacuation responses.
-        </p>
-        """,
-        unsafe_allow_html=True
-    )
 
 # Rural population graph
 
@@ -250,15 +232,6 @@ elif view_option == "State with Rural Population Percentage":
 
     st.pyplot(fig4)
 
-    st.markdown(
-        """
-        <p style='font-size:20px;'>
-        States with larger rural populations generally exhibited longer evacuation lead times. However, the relationship was not perfectly linear, suggesting that operational preparedness and infrastructure can partially mitigate rural response challenges.
-        </p>
-        """,
-        unsafe_allow_html=True
-    )
-
 # Conclusion
 
 st.header("Key Takeaways")
@@ -266,7 +239,7 @@ st.header("Key Takeaways")
 st.markdown(
     """
     <p style='font-size:20px;'>
-    Evacuation lead times varied substantially across states and seasons. Rural and geographically isolated regions generally experienced slower evacuation response times. Wildfire frequency alone did not fully explain evacuation delays, suggesting that operational preparedness and infrastructure likely play a significant role. These findings support targeted investments in rural wildfire response systems, staffing readiness, and evacuation communication infrastructure.
+    Evacuation lead times varied substantially across states and seasons. Rural and geographically isolated regions generally experienced slower evacuation response times. Wildfire frequency alone did not fully explain evacuation delays, suggesting that operational preparedness and infrastructure likely play a significant role.
     </p>
     """,
     unsafe_allow_html=True
@@ -322,7 +295,7 @@ col1, col2, col3 = st.columns(3)
 
 col1.metric(
     "Median Lead Time",
-    f"{median_lead_time:.1f} min"
+    f"{median_lead_time:.2f} min"
 )
 
 col2.metric(
@@ -374,7 +347,7 @@ state_col1, state_col2 = st.columns(2)
 
 state_col1.metric(
     "Median Lead Time",
-    f"{state_df['lead_time_minutes'].median():.1f} min"
+    f"{state_df['lead_time_minutes'].median():.2f} min"
 )
 
 state_col2.metric(
