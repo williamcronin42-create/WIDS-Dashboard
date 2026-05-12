@@ -210,7 +210,7 @@ env3.metric(
 st.markdown(
     """
     <br><br>
-    ### [← Back to Main Dashboard](../)
+    ### [← Back to Main Dashboard](../app.py)
     """,
     unsafe_allow_html=True
 )
